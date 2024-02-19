@@ -1,0 +1,39 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main  # Trigger the workflow on pushes to the main branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run tests
+      run: npm test
+
+    - name: Build Docker image
+      run: docker build -t your-docker-registry/my-node-app:latest .
+
+    - name: Push Docker image to registry
+      run: |
+        echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+        docker push your-docker-registry/my-node-app:latest
+
+    - name: Deploy to Kubernetes
+      uses: appleboy/kubectl-action@v0.1.3
+      with:
+        kube_config_data: ${{ secrets.KUBE_CONFIG_DATA }}
+        commands: apply -f kubernetes/deployment.yaml
